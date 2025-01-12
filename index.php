@@ -1,8 +1,9 @@
 <?php
-// Configuration du proxy
+
+// Config du context
 $opts = array(
     'http' => array(
-        'proxy' => 'tcp://www-cache:3128',
+        'proxy' => 'tcp://www-cache:3128', // Proxy de Webetu
         'request_fulluri' => true
     ),
     'ssl' => array(
@@ -13,11 +14,18 @@ $opts = array(
 $context = stream_context_create($opts);
 
 // Obtenir l'adresse IP du client
-$clientIP = $_SERVER['REMOTE_ADDR'];
+if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+    $clientIP = $_SERVER['HTTP_CLIENT_IP'];
+} elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    $clientIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
+} else {
+    $clientIP = $_SERVER['REMOTE_ADDR'];
+}
+
 
 // API de géolocalisation
 $geoApiUrl = "http://ip-api.com/json/{$clientIP}";
-$geoData = file_get_contents($geoApiUrl, false, $context);
+$geoData = file_get_contents($geoApiUrl, false, $context); 
 $geoData = json_decode($geoData, true);
 
 // Si la géolocalisation n'est pas Nancy, utiliser les coordonnées de l'IUT Charlemagne
@@ -27,8 +35,8 @@ if ($geoData['city'] !== 'Nancy') {
 }
 
 // API de météorologie (utilisant OpenWeatherMap comme exemple)
-$weatherApiUrl = "https://api.openweathermap.org/data/2.5/weather?lat={$geoData['lat']}&lon={$geoData['lon']}&appid=TU_API_KEY&units=metric&lang=es";
-$weatherData = file_get_contents($weatherApiUrl, false, $context);
+$weatherApiUrl = "https://api.openweathermap.org/data/2.5/weather?lat={$geoData['lat']}&lon={$geoData['lon']}&appid=b0473067576eee946305f7e794e65341&units=metric&lang=fr";
+$weatherData = file_get_contents($weatherApiUrl, false, $context); 
 $weatherData = json_decode($weatherData, true);
 
 // Charger le fichier XSL
@@ -46,9 +54,9 @@ $xml->loadXML('<weather><temperature>' . $weatherData['main']['temp'] . '</tempe
 // Transformer XML en HTML
 $htmlFragment = $proc->transformToXML($xml);
 
-// Obtenir les données de qualité de l'air (utilisant la nouvelle API)
+// Obtenir les données de qualité de l'air 
 $airQualityApiUrl = "https://services3.arcgis.com/Is0UwT37raQYl9Jj/arcgis/rest/services/ind_grandest/FeatureServer/0/query?where=lib_zone%3D%27Nancy%27&orderByFields=date_ech%20DESC&outFields=*&resultRecordCount=1&f=pjson";
-$airQualityData = file_get_contents($airQualityApiUrl, false, $context);
+$airQualityData = file_get_contents($airQualityApiUrl, false, $context); 
 $airQualityData = json_decode($airQualityData, true);
 
 // Extraire l'indice de qualité de l'air (s'il est disponible)
@@ -72,7 +80,7 @@ $html = "<!DOCTYPE html>
     <div id='map' style='height: 400px; margin-top: 20px;'></div>
     <div id='air-quality'>
         <h2>Qualité de l'Air</h2>
-        <p>Indice de Qualité de l'Air (PM2.5): {$airQualityIndex}</p>
+        <p>Indice de Qualité de l'Air (PM2 .5): {$airQualityIndex}</p>
     </div>
     <footer>
         <p>API utilisées :</p>
@@ -83,9 +91,9 @@ $html = "<!DOCTYPE html>
         </ul>
     </footer>
     <script>
-        // Configuration de la carte Leaf let
+        // Configuration de la carte Leaflet
         var map = L.map('map').setView([{$geoData['lat']}, {$geoData['lon']}], 13);
-        L.tileLayer ('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(map);
         L.marker([{$geoData['lat']}, {$geoData['lon']}]).addTo(map)

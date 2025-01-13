@@ -1,57 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+<!DOCTYPE previsions SYSTEM "weather.dtd">
+  <!-- Définir le modèle principal -->
   <xsl:template match="/">
     <html>
       <head>
-        <title>Prévisions météorologiques</title>
+        <title>Prévisions Météo</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          h1 { color: #2E8B57; }
-          .climate-info { margin-top: 20px; }
-          .condition { font-weight: bold; }
-          .symbol { font-size: 24px; }
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .section { margin-bottom: 20px; }
+          .symbol { font-size: 1.5em; margin-right: 10px; }
         </style>
       </head>
       <body>
-        <h1>Prévisions météorologiques</h1>
-        <div class="climate-info">
-          <h2>Conditions pour demain</h2>
+        <h1>Prévisions Météo</h1>
 
-          <!-- Température -->
-          <p><span class="condition">Température :</span> 
-            <xsl:value-of select="temperature/level[@val='2m']"/>°C
-          </p>
-
-          <!-- Vent moyen -->
-          <p><span class="condition">Vent :</span> 
-            <xsl:value-of select="vent_moyen/level[@val='10m']"/> km/h 
-            <xsl:if test="vent_moyen/level[@val='10m']"> <span class="symbol">🌬️</span> </xsl:if>
-          </p>
-
-          <!-- Pluie -->
-          <p><span class="condition">Pluie (3 heures) :</span> 
-            <xsl:value-of select="pluie"/> mm 
-            <xsl:if test="pluie &gt; 0">
-              <span class="symbol">🌧️</span>
-            </xsl:if>
-          </p>
-
-          <!-- Risque de neige -->
-          <p><span class="condition">Risque de neige :</span> 
-            <xsl:value-of select="risque_neige"/>
-            <xsl:if test="risque_neige = 'oui'">
-              <span class="symbol">❄️</span>
-            </xsl: if>
-          </p>
-          
-          <!-- Humidité -->
-          <p><span class="condition">Humidité :</span> 
-            <xsl:value-of select="humidite/level[@val='2m']"/> %
-          </p>
-        </div>
+        <xsl:apply-templates select="previsions/echeance"/>
       </body>
     </html>
+  </xsl:template>
+
+  <!-- Traiter chaque &lt;echeance&gt; -->
+  <xsl:template match="echeance">
+    <div class="section">
+      <h2>Prévisions pour <xsl:value-of select="@timestamp"/></h2>
+
+      <!-- Température -->
+      <p>
+        <span class="symbol">🌡️</span>
+        Température : <xsl:value-of select="temperature/level[@val='2m']"/> K
+        <xsl:if test="number(temperature/level[@val='2m']) &lt; 273.15"> (Froid)</xsl:if>
+      </p>
+
+      <!-- Pluie -->
+      <p>
+        <span class="symbol">🌧️</span>
+        Précipitations : <xsl:value-of select="pluie[@interval='3h']"/> mm
+        <xsl:if test="pluie[@interval='3h'] &gt; 0"> (Pluie possible)</xsl:if>
+      </p>
+
+      <!-- Neige -->
+      <p>
+        <span class="symbol">❄️</span>
+        Risque de neige : <xsl:value-of select="risque_neige"/>
+      </p>
+
+      <!-- Vent -->
+      <p>
+        <span class="symbol">💨</span>
+        Vent moyen : <xsl:value-of select="vent_moyen/level[@val='10m']"/> km/h,
+        Rafales : <xsl:value-of select="vent_rafales/level[@val='10m']"/> km/h
+      </p>
+    </div>
   </xsl:template>
 
 </xsl:stylesheet>
